@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+build/
+dist/
+installer_out/
+*.spec
+uploads/
+.venv/
+agent/bundled_config.json
+config.json

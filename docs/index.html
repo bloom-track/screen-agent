@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Screen Agent — Download</title>
+<style>
+  :root { color-scheme: light dark; --fg:#1a1a1a; --mut:#666; --bg:#fafafa; --card:#fff; --bd:#e3e3e3; --accent:#27ae60; }
+  @media (prefers-color-scheme: dark){ :root{ --fg:#eee; --mut:#9a9a9a; --bg:#111; --card:#1b1b1b; --bd:#2c2c2c; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--fg); line-height:1.6; }
+  .wrap { max-width:640px; margin:0 auto; padding:48px 20px 64px; }
+  h1 { font-size:30px; font-weight:600; margin:0 0 6px; }
+  .sub { color:var(--mut); font-size:17px; margin:0 0 32px; }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:24px; margin:0 0 18px; }
+  .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; font-size:17px; font-weight:600; padding:14px 26px; border-radius:10px; }
+  .btn.alt { background:transparent; color:var(--fg); border:1px solid var(--bd); font-weight:500; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .note { font-size:14px; color:var(--mut); margin-top:12px; }
+  ol { padding-left:20px; } li { margin:6px 0; }
+  code { background:rgba(128,128,128,.15); padding:2px 6px; border-radius:5px; font-size:14px; }
+  h2 { font-size:18px; margin:28px 0 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Screen Agent</h1>
+  <p class="sub">Captures a screenshot every few seconds and uploads it to the cloud. Start/stop with one click.</p>
+
+  <div class="card">
+    <div class="row">
+      <a class="btn" id="installer" href="#">Download for Windows</a>
+      <a class="btn alt" id="exe" href="#">Portable .exe</a>
+    </div>
+    <p class="note">Windows 10 or 11, 64-bit. The installer adds a Start-menu shortcut and an uninstaller, and can start the app when you sign in.</p>
+  </div>
+
+  <h2>Install</h2>
+  <ol>
+    <li>Click <strong>Download for Windows</strong>.</li>
+    <li>If Windows shows a blue “Windows protected your PC” box, click <strong>More info → Run anyway</strong> (this appears until the app is code-signed).</li>
+    <li>Follow the installer, then launch <strong>Screen Agent</strong>.</li>
+    <li>Fill in the bucket and keys if they aren’t already set, then press <strong>Start</strong>.</li>
+  </ol>
+
+  <h2>Uninstall</h2>
+  <p class="note">Settings → Apps → Screen Agent → Uninstall.</p>
+</div>
+<script>
+  // Point the buttons at this repo's latest release assets.
+  // Works automatically once published under github.com/<owner>/<repo>.
+  (function () {
+    var parts = location.hostname.split(".");      // <owner>.github.io
+    var owner = parts[0];
+    var repo = location.pathname.split("/").filter(Boolean)[0] || "screen-agent";
+    var base = "https://github.com/" + owner + "/" + repo + "/releases/latest/download/";
+    document.getElementById("installer").href = base + "ScreenAgent-Setup.exe";
+    document.getElementById("exe").href = base + "ScreenAgent.exe";
+  })();
+</script>
+</body>
+</html>
