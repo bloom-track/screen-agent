@@ -1,0 +1,61 @@
+name: build-windows
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Bake Wasabi credentials (from repo Secrets)
+        shell: pwsh
+        env:
+          WASABI_ACCESS_KEY: ${{ secrets.WASABI_ACCESS_KEY }}
+          WASABI_SECRET_KEY: ${{ secrets.WASABI_SECRET_KEY }}
+        run: |
+          @{
+            wasabi_access_key = $env:WASABI_ACCESS_KEY
+            wasabi_secret_key = $env:WASABI_SECRET_KEY
+            wasabi_bucket     = "pranayapp"
+            wasabi_region     = "ap-southeast-1"
+            wasabi_endpoint   = "https://s3.ap-southeast-1.wasabisys.com"
+          } | ConvertTo-Json | Set-Content agent/bundled_config.json
+
+      - name: Build ScreenAgent.exe
+        run: pyinstaller --onefile --windowed --name ScreenAgent --add-data "agent/bundled_config.json;." --hidden-import PIL._tkinter_finder agent/app.py
+
+      - name: Build installer (Inno Setup)
+        run: |
+          choco install innosetup --no-progress -y
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\screen-agent.iss
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScreenAgent-windows
+          path: |
+            dist/ScreenAgent.exe
+            installer_out/ScreenAgent-Setup.exe
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: Screen Agent v0.1.${{ github.run_number }}
+          files: |
+            dist/ScreenAgent.exe
+            installer_out/ScreenAgent-Setup.exe
