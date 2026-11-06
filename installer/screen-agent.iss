@@ -12,6 +12,7 @@ AppId={{8F3A6C2E-1B4D-4E7A-9C21-7A5E9D0B3F10}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+SourceDir=..
 DefaultDirName={autopf}\ScreenAgent
 DisableProgramGroupPage=yes
 OutputDir=installer_out
