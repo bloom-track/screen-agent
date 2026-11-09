@@ -1,8 +1,30 @@
 # Screen Agent
 
-A tiny Windows app: **Start/Stop**, screenshot every N seconds, upload straight
-to a **Wasabi** (S3-compatible) bucket, live stats (captured, uploaded, pending,
-bandwidth). Pure Python + Tkinter + boto3, so the `.exe` stays small.
+A tiny Windows app that captures a screenshot every few seconds and uploads it
+to cloud storage, with a one-click **Start / Stop** and live stats. Pure Python
++ Tkinter, so the installer stays small and there's nothing extra to install.
+
+**Download:** https://bloom-track.github.io/screen-agent
+
+---
+
+## Features
+
+- One screenshot every N seconds (default 3), uploaded automatically
+- **Start / Stop** with live stats: captured, uploaded, pending, bandwidth, uptime
+- **View latest capture** opens your most recent screenshot in the browser
+- Disk-backed upload queue — survives offline periods and reboots, retries with backoff
+- Uploads straight to **Wasabi** (S3-compatible); objects grouped by machine and date
+- Optional auto-start on sign-in; clean installer + uninstaller
+- Skips frames identical to the previous one (idle screen) to save bandwidth
+
+## For users (install)
+
+1. Open the **[download page](https://bloom-track.github.io/screen-agent)** and click **Download for Windows**.
+2. If Windows shows “Windows protected your PC”, click **More info → Run anyway** (the app isn’t code-signed yet).
+3. Run the installer, launch **Screen Agent**, fill in the bucket + keys if they aren’t pre-set, and press **Start**.
+
+Requires Windows 10 or 11 (64-bit). Windows needs no screen-recording permission.
 
 ## Layout
 
@@ -15,41 +37,15 @@ agent/
   config.py     settings + where files live
 scripts/
   set_lifecycle.py   one-time: auto-delete old screenshots after 90 days
-server/
-  server.py     optional local test endpoint (not used with Wasabi)
+installer/
+  screen-agent.iss   Inno Setup installer script
+docs/
+  index.html         the download page (served by GitHub Pages)
 ```
 
-## Configure (keys in the app)
+## For developers
 
-Open the app and fill in **Bucket, Region, Access key, Secret key**, then
-**Start**. Values are saved to `%LOCALAPPDATA%\ScreenAgent\config.json`.
-
-> Keys live on each machine running the app. Scope the Wasabi access key to
-> **put-only on this one bucket** so a leaked key can't read or delete anything.
-
-Region → endpoint must match, e.g.:
-
-| Region | Endpoint |
-|---|---|
-| `us-east-1` | `https://s3.us-east-1.wasabisys.com` |
-| `ap-southeast-1` | `https://s3.ap-southeast-1.wasabisys.com` |
-
-Set the endpoint in `config.json` (`wasabi_endpoint`) if your bucket isn't in
-`us-east-1`. Objects are stored as
-`screenshots/<hostname>/YYYY/MM/DD/shot_...webp`.
-
-## Auto-delete old screenshots
-
-Wasabi bills a **90-day minimum per object**, so deleting earlier saves nothing.
-Set a bucket lifecycle rule once instead of deleting from the app:
-
-```bash
-pip install boto3
-python scripts/set_lifecycle.py          # delete after 90 days
-python scripts/set_lifecycle.py --days 120
-```
-
-## Run it in dev (Mac or Windows)
+### Run it (Mac or Windows)
 
 ```bash
 cd screen-agent
@@ -59,42 +55,57 @@ python agent/app.py
 ```
 
 On macOS the first run asks for Screen Recording permission (System Settings →
-Privacy).
+Privacy). On Windows there is no such prompt.
 
-## Build the Windows .exe
+### Build the Windows .exe + installer
 
-You're on a Mac, so build on a Windows runner. Push this repo to GitHub and the
-workflow (`.github/workflows/build-windows.yml`) produces `ScreenAgent.exe` as a
-downloadable artifact on every push — get it from the Actions tab. That single
-file is the whole app; double-click to run.
+Pushing to `main` runs `.github/workflows/build-windows.yml`, which builds the
+exe and the Inno Setup installer and publishes them as a GitHub release. The
+download page always links to the latest release.
 
-**Zero-typing build (keys baked in, not committed):** in the GitHub repo add two
-Actions secrets — Settings → Secrets and variables → Actions:
-
-- `WASABI_ACCESS_KEY`
-- `WASABI_SECRET_KEY`
-
-The build writes them into `bundled_config.json` inside the exe (bucket/region
-are already set to `pranayapp` / `ap-southeast-1`). The shipped exe then uploads
-with no setup. A per-machine `%LOCALAPPDATA%\ScreenAgent\config.json` still
-overrides the baked values if you ever need to. The keys never enter git.
-
-On an actual Windows machine instead:
+To build locally on Windows:
 
 ```bat
 pip install -r requirements.txt pyinstaller
 pyinstaller --onefile --windowed --name ScreenAgent --hidden-import PIL._tkinter_finder agent/app.py
+iscc installer\screen-agent.iss
 ```
 
-## Tuning (config.json)
+### Pre-load credentials (optional)
 
-- **scale** `0.5` + **quality** `60` roughly quarter the bandwidth.
-- **skip_unchanged** drops frames identical to the previous one (idle screen).
-- **monitor** `0` = all screens, `1` = primary only.
-- At one shot / 3s that's ~150 MB/hr/machine before skip — retention matters.
+Add repo **Actions secrets** `WASABI_ACCESS_KEY` and `WASABI_SECRET_KEY`; the
+build bakes them into the installer so the app works with no setup. Use a
+**put-only key scoped to the bucket** — never a production key — because anyone
+can download a public installer and extract what’s baked in.
 
-## Not included (ask if you want them)
+## Configuration
 
-- A real installer with Start-menu entry + auto-start on login (Inno Setup).
-- System-tray minimize instead of a window (pystray).
-- Code signing (needed to avoid the Windows SmartScreen warning).
+Stored at `%LOCALAPPDATA%\ScreenAgent\config.json` (the upload queue is the
+`spool` folder beside it). Editable in the window: bucket, region, keys, interval.
+
+| Key | Default | Notes |
+|---|---|---|
+| `wasabi_bucket` / `wasabi_region` / `wasabi_endpoint` | `pranayapp` / `ap-southeast-1` / Singapore | target bucket |
+| `interval_seconds` | `3` | seconds between captures |
+| `quality` | `60` | WebP/JPEG quality 1–100 |
+| `scale` | `1.0` | `0.5` = half resolution, saves bandwidth |
+| `monitor` | `0` | `0` = all screens, `1` = primary only |
+| `skip_unchanged` | `true` | drop frames identical to the previous one |
+
+At one shot / 3s that’s roughly 150 MB/hour/machine before skipping, so plan
+retention. Wasabi bills a **90-day minimum per object**, so clean up with a
+bucket lifecycle rule (`scripts/set_lifecycle.py`), not per-run deletion.
+
+## Known gotchas
+
+- **Clock skew:** Wasabi/S3 reject uploads if the machine clock is off by >15 min
+  (`RequestTimeTooSkewed`). Fix the OS time (enable automatic time sync), not the app.
+- **macOS** silently drops other apps’ windows without Screen Recording permission.
+- **Unsigned:** Windows SmartScreen and some antivirus warn on an unsigned
+  cloud-uploading app. Code signing (e.g. Azure Trusted Signing) removes the warning.
+
+## Not included (yet)
+
+- Code signing
+- System-tray minimize instead of a window
+- At-rest encryption of spooled frames
