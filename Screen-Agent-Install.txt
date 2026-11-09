@@ -1,0 +1,24 @@
+Screen Agent - Install Guide (Windows 10 / 11, 64-bit)
+======================================================
+
+Download:
+  https://ktvoilacode.github.io/screen-agent
+
+Steps:
+  1. Click "Download for Windows".
+  2. If Windows shows a blue "Windows protected your PC" box,
+     click "More info" -> "Run anyway". (The app is not code-signed yet,
+     so this notice is normal and safe to dismiss.)
+  3. Run the installer and follow the prompts.
+  4. Launch "Screen Agent" from the Start menu.
+
+Using it:
+  - Click START to begin capturing. A screenshot is taken every few
+    seconds and uploaded automatically.
+  - Click STOP to end.
+  - "View latest capture" opens your most recent screenshot in the browser.
+
+Notes:
+  - You can tick "Start Screen Agent when I sign in" during install so it
+    runs automatically on startup.
+  - To remove it later: Settings -> Apps -> Screen Agent -> Uninstall.
