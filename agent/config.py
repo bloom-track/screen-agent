@@ -24,7 +24,12 @@ DEFAULTS = {
     "quality": 60,                 # 1-100
     "scale": 1.0,                  # 0.5 = half resolution, saves bandwidth
     "monitor": 0,                  # 0 = all screens, 1 = primary, 2 = second...
-    "skip_unchanged": True,        # skip a frame identical to the last one
+    "skip_unchanged": True,        # skip a frame that has not visibly changed since the last one sent
+    "keepalive_seconds": 10,       # ...but still send one at least this often, so the server knows the feed is alive
+    # --- upload ---
+    "upload_workers": 4,           # files uploaded at the same time
+    "max_pending": 5,              # keep only the newest N waiting files; older ones are stale for live advice (0 = keep all)
+    "max_age_seconds": 15,         # a waiting file older than this is dropped (0 = never)
 }
 
 

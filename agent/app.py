@@ -23,12 +23,13 @@ from uploader import Uploader
 
 
 class CaptureWorker(threading.Thread):
-    def __init__(self, cfg, spool, stats, stop_event):
+    def __init__(self, cfg, spool, stats, stop_event, meta=None):
         super().__init__(daemon=True)
         self.cfg = cfg
         self.spool = spool
         self.stats = stats
         self.stop_event = stop_event
+        self.meta = meta if meta is not None else {}
         self.capturer = Capturer(cfg)
 
     def run(self):
@@ -53,6 +54,7 @@ class CaptureWorker(threading.Thread):
         tmp = final.with_suffix(final.suffix + ".tmp")
         tmp.write_bytes(data)              # write fully, then rename so the
         tmp.rename(final)                 # uploader never sees a half file
+        self.meta[final.name] = self.capturer.last_ms
 
 
 def human_bytes(n: float) -> str:
@@ -66,7 +68,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Screen Agent")
-        self.geometry("400x575")
+        self.geometry("400x620")
         self.resizable(False, False)
 
         self.cfg = config.load()
@@ -128,7 +130,7 @@ class App(tk.Tk):
         self.stat_vars = {}
         rows = [
             ("status", "Status"), ("captured", "Captured"), ("uploaded", "Uploaded"),
-            ("pending", "Pending"), ("bandwidth", "Bandwidth"),
+            ("pending", "Pending"), ("dropped", "Dropped (stale)"), ("bandwidth", "Bandwidth"),
             ("rate", "Upload rate"), ("uptime", "Uptime"),
         ]
         for i, (key, label) in enumerate(rows):
@@ -145,9 +147,15 @@ class App(tk.Tk):
         )
         self.view_btn.grid(row=7, column=0, columnspan=2, sticky="ew", padx=12, pady=(10, 2))
 
+        self.clear_btn = tk.Button(
+            frm, text="\U0001f5d1  Clear pending uploads", command=self._clear_pending,
+            relief="flat",
+        )
+        self.clear_btn.grid(row=9, column=0, columnspan=2, sticky="ew", padx=12, pady=(2, 2))
+
         self.err_var = tk.StringVar(value="")
         ttk.Label(frm, textvariable=self.err_var, foreground="#c0392b",
-                  wraplength=360).grid(row=8, column=0, columnspan=2, padx=12)
+                  wraplength=360).grid(row=10, column=0, columnspan=2, padx=12)
 
     # ---- actions --------------------------------------------------------
     def _save_settings(self):
@@ -166,9 +174,10 @@ class App(tk.Tk):
         self.stats.reset()
         self.stats.start_session()
         self.stop_event = threading.Event()
+        meta = {}
         workers = [
-            CaptureWorker(self.cfg, self.spool, self.stats, self.stop_event),
-            Uploader(self.cfg, self.spool, self.stats, self.stop_event),
+            CaptureWorker(self.cfg, self.spool, self.stats, self.stop_event, meta),
+            Uploader(self.cfg, self.spool, self.stats, self.stop_event, meta),
         ]
         for w in workers:
             w.start()
@@ -183,6 +192,18 @@ class App(tk.Tk):
         self.running = False
         self.start_btn.config(state="normal")
         self.stop_btn.config(state="disabled")
+
+    def _clear_pending(self):
+        """Delete every screenshot still waiting to upload (they are stale for live advice)."""
+        n = 0
+        for p in self.spool.glob("shot_*.*"):
+            try:
+                p.unlink()
+                n += 1
+            except OSError:
+                pass
+        self.stats.inc("dropped", n)
+        self.stats.set_error(f"Cleared {n} pending uploads")
 
     def _view_latest(self):
         """Find the newest screenshot for this machine in Wasabi and open it
@@ -236,6 +257,7 @@ class App(tk.Tk):
         self.stat_vars["captured"].set(f"{s['captured']}  (skipped {s['skipped']})")
         self.stat_vars["uploaded"].set(str(s["uploaded"]))
         self.stat_vars["pending"].set(str(pending))
+        self.stat_vars["dropped"].set(str(s["dropped"]))
         self.stat_vars["bandwidth"].set(human_bytes(mb))
         self.stat_vars["rate"].set(human_bytes(rate) + "/min")
         self.stat_vars["uptime"].set(time.strftime("%H:%M:%S", time.gmtime(up)))

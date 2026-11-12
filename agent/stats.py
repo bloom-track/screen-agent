@@ -14,6 +14,7 @@ class Stats:
             self.captured = 0
             self.skipped = 0
             self.uploaded = 0
+            self.dropped = 0
             self.bytes_uploaded = 0
             self.started_at = None
             self.ended_at = None
@@ -49,6 +50,7 @@ class Stats:
                 "captured": self.captured,
                 "skipped": self.skipped,
                 "uploaded": self.uploaded,
+                "dropped": self.dropped,
                 "bytes_uploaded": self.bytes_uploaded,
                 "last_error": self.last_error,
                 "uptime": uptime,
