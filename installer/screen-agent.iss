@@ -3,7 +3,9 @@
 ; desktop shortcut, optional auto-start on sign-in, and an uninstaller.
 
 #define MyAppName "Screen Agent"
-#define MyAppVersion "0.1.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "1.1"
+#endif
 #define MyAppPublisher "VoilaCode"
 #define MyAppExeName "ScreenAgent.exe"
 

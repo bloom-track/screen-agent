@@ -18,6 +18,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Read version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-Content VERSION).Trim()
+          "v=$v" >> $env:GITHUB_OUTPUT
+          Set-Content agent/_version.py "VERSION = '$v'"
+
       - name: Install deps
         run: pip install -r requirements.txt pyinstaller
 
@@ -41,7 +49,7 @@ jobs:
       - name: Build installer (Inno Setup)
         run: |
           choco install innosetup --no-progress -y
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\screen-agent.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=${{ steps.ver.outputs.v }} installer\screen-agent.iss
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -54,8 +62,8 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.${{ github.run_number }}
-          name: Screen Agent v0.1.${{ github.run_number }}
+          tag_name: v${{ steps.ver.outputs.v }}
+          name: Screen Agent v${{ steps.ver.outputs.v }}
           files: |
             dist/ScreenAgent.exe
             installer_out/ScreenAgent-Setup.exe

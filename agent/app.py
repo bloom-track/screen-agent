@@ -21,6 +21,11 @@ from capture import Capturer
 from stats import Stats
 from uploader import Uploader
 
+try:
+    from _version import VERSION  # written by the build from the VERSION file
+except ImportError:
+    VERSION = "dev"
+
 
 class CaptureWorker(threading.Thread):
     def __init__(self, cfg, spool, stats, stop_event, meta=None):
@@ -67,7 +72,7 @@ def human_bytes(n: float) -> str:
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Screen Agent")
+        self.title(f"Screen Agent v{VERSION}")
         self.geometry("400x620")
         self.resizable(False, False)
 

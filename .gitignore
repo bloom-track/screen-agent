@@ -8,3 +8,4 @@ uploads/
 .venv/
 agent/bundled_config.json
 config.json
+agent/_version.py
