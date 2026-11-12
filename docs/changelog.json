@@ -1,0 +1,22 @@
+[
+  {
+    "version": "1.1",
+    "date": "2026-11-12",
+    "title": "Fast, never-stuck uploads",
+    "changes": [
+      "Uploads the newest screenshot first and four at a time, so a slow connection no longer builds a backlog that grows forever.",
+      "Drops screenshots that are more than 15 seconds old or beyond the 5 newest: for live advice an old screen only delays the new ones.",
+      "New \"Clear pending uploads\" button, and a \"Dropped (stale)\" counter beside Pending.",
+      "Skips screenshots that have not visibly changed (a blinking cursor does not count), but still sends one every 10 seconds so the server knows the feed is alive.",
+      "Folders are dated by the day the screenshot was taken, not the day it was uploaded.",
+      "Each upload carries timing data (queue, capture and upload time) for the server's Timing page.",
+      "The window title shows the version."
+    ]
+  },
+  {
+    "version": "0.1.5",
+    "date": "2026-11-09",
+    "title": "Earlier release",
+    "changes": ["Screenshot capture every few seconds with upload to the cloud; installer and portable .exe."]
+  }
+]

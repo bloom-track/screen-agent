@@ -20,11 +20,15 @@
   ol { padding-left:20px; } li { margin:6px 0; }
   code { background:rgba(128,128,128,.15); padding:2px 6px; border-radius:5px; font-size:14px; }
   h2 { font-size:18px; margin:28px 0 10px; }
+  .ver { display:inline-block; background:rgba(39,174,96,.15); color:var(--accent); font-weight:600; font-size:14px; padding:3px 10px; border-radius:20px; margin-left:8px; vertical-align:3px; }
+  .rel { border-top:1px solid var(--bd); padding:14px 0 2px; } .rel:first-child { border-top:0; padding-top:0; }
+  .rel h3 { font-size:16px; margin:0 0 2px; } .rel .d { color:var(--mut); font-size:14px; margin:0 0 6px; }
+  .rel ul { margin:6px 0 10px; padding-left:20px; font-size:15px; } .rel li { margin:4px 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Screen Agent</h1>
+  <h1>Screen Agent <span class="ver" id="ver"></span></h1>
   <p class="sub">Captures a screenshot every few seconds and uploads it to the cloud. Start/stop with one click.</p>
 
   <div class="card">
@@ -32,6 +36,7 @@
       <a class="btn" id="installer" href="#">Download for Windows</a>
       <a class="btn alt" id="exe" href="#">Portable .exe</a>
     </div>
+    <p class="note" id="relnote"></p>
     <p class="note">Windows 10 or 11, 64-bit. The installer adds a Start-menu shortcut and an uninstaller, and can start the app when you sign in.</p>
   </div>
 
@@ -42,6 +47,9 @@
     <li>Follow the installer, then launch <strong>Screen Agent</strong>.</li>
     <li>Fill in the bucket and keys if they aren’t already set, then press <strong>Start</strong>.</li>
   </ol>
+
+  <h2>What's new</h2>
+  <div class="card" id="log"><p class="note">Loading…</p></div>
 
   <h2>Uninstall</h2>
   <p class="note">Settings → Apps → Screen Agent → Uninstall.</p>
@@ -56,6 +64,23 @@
     var base = "https://github.com/" + owner + "/" + repo + "/releases/latest/download/";
     document.getElementById("installer").href = base + "ScreenAgent-Setup.exe";
     document.getElementById("exe").href = base + "ScreenAgent.exe";
+  })();
+
+  // Version, release date and changelog come from changelog.json (newest first), kept next to this page.
+  (function () {
+    var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
+    fetch("changelog.json", { cache: "no-cache" }).then(function (r) { return r.json(); }).then(function (rel) {
+      var cur = rel[0];
+      document.getElementById("ver").textContent = "v" + cur.version;
+      var d = new Date(cur.date + "T12:00:00");
+      document.getElementById("relnote").innerHTML = "Version <strong>" + esc(cur.version) + "</strong> · released " +
+        esc(d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })) + ". Already installed? Run the installer again to update.";
+      document.getElementById("log").innerHTML = rel.map(function (r) {
+        var dt = new Date(r.date + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+        return '<div class="rel"><h3>v' + esc(r.version) + " — " + esc(r.title) + '</h3><p class="d">' + esc(dt) + "</p><ul>" +
+          r.changes.map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("") + "</ul></div>";
+      }).join("");
+    }).catch(function () { document.getElementById("log").innerHTML = '<p class="note">Changelog unavailable.</p>'; });
   })();
 </script>
 </body>
